@@ -23,9 +23,10 @@ import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{Logging, Partition, SparkEnv, TaskContext}
+import org.apache.hadoop.hbase.spark.datasources.HBaseResources._
 import org.apache.spark.sql.datasources.hbase.Field
 import scala.collection.mutable
-/*
+
 class HBaseTableScanRDD(relation: HBaseRelation,
                        val hbaseContext: HBaseContext,
                        @transient val filter: Option[SparkSQLPushDownFilter] = None,
@@ -197,6 +198,7 @@ class HBaseTableScanRDD(relation: HBaseRelation,
   }
 
   override def compute(split: Partition, context: TaskContext): Iterator[Result] = {
+    println("---------------Inner compute begin --------------")
     val partition = split.asInstanceOf[HBaseScanPartition]
     val filter = SerializedFilter.fromSerializedFilter(partition.sf)
     val scans = partition.scanRanges
@@ -211,6 +213,9 @@ class HBaseTableScanRDD(relation: HBaseRelation,
         buildGets(tableResource, points, filter, columns, hbaseContext)
       }
     }
+    println("---------------Inner--------------")
+    gIt.foreach(x=>println(x.getRow))
+    println("---------------Inner--------------")
     val rIts = scans.par
       .map { scan =>
       hbaseContext.applyCreds()
@@ -221,10 +226,12 @@ class HBaseTableScanRDD(relation: HBaseRelation,
       .fold(Iterator.empty: Iterator[Result]){ case (x, y) =>
       x ++ y
     } ++ gIt
+    rIts.map(x=>println(x.getRow))
+    println("---------------Inner compute close --------------")
     rIts
   }
 }
-*/
+
 case class SerializedFilter(b: Option[Array[Byte]])
 
 object SerializedFilter {
@@ -238,19 +245,19 @@ object SerializedFilter {
 }
 
 private[hbase] case class HBaseRegion(
-    override val index: Int,
-    val start: Option[HBaseType] = None,
-    val end: Option[HBaseType] = None,
-    val server: Option[String] = None) extends Partition
+                                         override val index: Int,
+                                         val start: Option[HBaseType] = None,
+                                         val end: Option[HBaseType] = None,
+                                         val server: Option[String] = None) extends Partition
 
 
 private[hbase] case class HBaseScanPartition(
-    override val index: Int,
-    val regions: HBaseRegion,
-    val scanRanges: Seq[Range],
-    val points: Seq[Array[Byte]],
-    val sf: SerializedFilter) extends Partition
-/*
+                                                override val index: Int,
+                                                val regions: HBaseRegion,
+                                                val scanRanges: Seq[Range],
+                                                val points: Seq[Array[Byte]],
+                                                val sf: SerializedFilter) extends Partition
+
 case class RDDResources(set: mutable.HashSet[Resource]) {
   def addResource(s: Resource) {
     set += s
@@ -265,4 +272,4 @@ case class RDDResources(set: mutable.HashSet[Resource]) {
       set.remove(rs)
     }
   }
-}*/
+}

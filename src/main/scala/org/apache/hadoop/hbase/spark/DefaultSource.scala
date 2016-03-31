@@ -7,7 +7,7 @@ import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapred.TableOutputFormat
 //import org.apache.hadoop.hbase.mapreduce.TableOutputFormat
-//import org.apache.hadoop.hbase.spark.datasources.HBaseTableScanRDD
+import org.apache.hadoop.hbase.spark.datasources.HBaseTableScanRDD
 import org.apache.hadoop.hbase.spark.datasources.Utils
 import org.apache.hadoop.hbase.types._
 import org.apache.hadoop.hbase._
@@ -256,10 +256,15 @@ case class HBaseRelation (
       None
     }
 
-    /*val hRdd = new HBaseTableScanRDD(this, hbaseContext, pushDownFilterJava, requiredQualifierDefinitionList.seq)
+    val hRdd = new HBaseTableScanRDD(this, hbaseContext, pushDownFilterJava, requiredQualifierDefinitionList.seq)
     pushDownRowKeyFilter.points.foreach(hRdd.addPoint(_))
     pushDownRowKeyFilter.ranges.foreach(hRdd.addRange(_))
-    var resultRDD: RDD[Row] = {
+println("-----------getting hrdd-------------")
+hRdd.foreach(x=>println(x.getRow))
+println(hRdd.points.size)
+    println(hRdd.ranges.size)
+println("-----------finish getting hrdd-------------")
+    /*var resultRDD: RDD[Row] = {
       val tmp = hRdd.map{ r =>
         Row.fromSeq(requiredColumns.map(c =>
           DefaultSourceStaticUtils.getValue(catalog.getField(c), r)))
@@ -270,6 +275,7 @@ case class HBaseRelation (
         null
       }
     }
+
 
     if (resultRDD == null) {
       val scan = new Scan()
@@ -367,6 +373,8 @@ case class HBaseRelation (
             new AndLogicExpression(superDynamicLogicExpression, logicExpression)
         superRowKeyFilter.mergeIntersect(rowKeyFilter)
       }
+      println("===============here key rot=================")
+      println(superRowKeyFilter)
 
     })
 
@@ -560,13 +568,33 @@ class ScanRange(var upperBound:Array[Byte], var isUpperBoundEqualTo:Boolean,
    * @return      True is overlap false is not overlap
    */
   def getOverLapScanRange(other:ScanRange): ScanRange = {
+    if (compareRange(lowerBound, other.lowerBound) < 0) {//this lower is lower
+      if (compareRange(upperBound, other.upperBound) < 0) { //this upper is lower
+        if (compareRange(upperBound, other.lowerBound) < 0 || (compareRange(upperBound, other.lowerBound) == 0 && (!isUpperBoundEqualTo || !other.isLowerBoundEqualTo)))
+          return null
+        return new ScanRange(upperBound, isUpperBoundEqualTo, other.lowerBound, other.isLowerBoundEqualTo)
+      }
+      else {
+          return other
+      }
+    } else {//other lower is lower
+      if (compareRange(upperBound, other.upperBound) < 0) //this upper is lower
+        return this
+      else {
+        if (compareRange(other.upperBound, lowerBound) < 0 || (compareRange(other.upperBound, lowerBound) == 0 && (!other.isUpperBoundEqualTo || !isLowerBoundEqualTo)))
+          return null
+        else
+          return new ScanRange(other.upperBound, other.isUpperBoundEqualTo, lowerBound, isLowerBoundEqualTo)
+      }
+    }
 
-    var leftRange:ScanRange = null
-    var rightRange:ScanRange = null
+    //var leftRange:ScanRange = null
+    //var rightRange:ScanRange = null
 
     //First identify the Left range
     // Also lower bound can't be null
-    if (compareRange(lowerBound, other.lowerBound) < 0 ||
+
+    /*if (compareRange(lowerBound, other.lowerBound) < 0 ||
         compareRange(upperBound, other.upperBound) < 0) {
       leftRange = this
       rightRange = other
@@ -575,6 +603,9 @@ class ScanRange(var upperBound:Array[Byte], var isUpperBoundEqualTo:Boolean,
       rightRange = this
     }
 
+    if (compareRange(leftRange.upperBound, rightRange.upperBound) >= 0)
+      return
+
     //Then see if leftRange goes to null or if leftRange.upperBound
     // upper is greater or equals to rightRange.lowerBound
     if (leftRange.upperBound == null ||
@@ -582,7 +613,7 @@ class ScanRange(var upperBound:Array[Byte], var isUpperBoundEqualTo:Boolean,
       new ScanRange(leftRange.upperBound, leftRange.isUpperBoundEqualTo, rightRange.lowerBound, rightRange.isLowerBoundEqualTo)
     } else {
       null
-    }
+    }*/
   }
 
   /**
