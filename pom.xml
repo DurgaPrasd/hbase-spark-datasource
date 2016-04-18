@@ -566,7 +566,8 @@
                             <goal>test</goal>
                         </goals>
                         <configuration>
-                            <skipTests>true</skipTests>
+                            <argLine>-XX:MaxPermSize=2048m </argLine>
+                            <skipTests>false</skipTests>
                         </configuration>
                     </execution>
                     <execution>
@@ -578,7 +579,7 @@
                         <configuration>
                             <tagsToExclude>Integration-Test</tagsToExclude>
                             <argLine>
-                                -Xmx1536m -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+                                -Xmx2048m -XX:MaxPermSize=2048m -XX:ReservedCodeCacheSize=2048m
                             </argLine>
                             <parallel>false</parallel>
                         </configuration>

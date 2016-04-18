@@ -91,8 +91,12 @@ case class HBaseRelation (
     HBaseSparkConf.BULKGET_SIZE,  HBaseSparkConf.defaultBulkGetSize))
 
   //create or get latest HBaseContext
-    @transient val config = HBaseConfiguration.create()
-    configResources.split(",").foreach( r => config.addResource(r))
+  @transient val config = HBaseConfiguration.create()
+   println(config.toString())
+ config.reloadConfiguration()
+//configResources.split(",").foreach( r => {println(r + "/hbase-site.xml"); config.addResource(r + "/hbase-site.xml")})
+ //   configResources.split(",").foreach( r => config.addResource(r))
+   println(config.toString())
     val hbaseContext:HBaseContext = new HBaseContext(sqlContext.sparkContext, config)
 
   val wrappedConf = new SerializableConfiguration(hbaseContext.config)
@@ -256,7 +260,7 @@ case class HBaseRelation (
       None
     }
 
-    val hRdd = new HBaseTableScanRDD(this, hbaseContext, pushDownFilterJava, requiredQualifierDefinitionList.seq)
+    /*val hRdd = new HBaseTableScanRDD(this, hbaseContext, pushDownFilterJava, requiredQualifierDefinitionList.seq)
     pushDownRowKeyFilter.points.foreach(hRdd.addPoint(_))
     pushDownRowKeyFilter.ranges.foreach(hRdd.addRange(_))
 println("-----------getting hrdd-------------")
@@ -264,7 +268,7 @@ hRdd.foreach(x=>println(x.getRow))
 println(hRdd.points.size)
     println(hRdd.ranges.size)
 println("-----------finish getting hrdd-------------")
-    /*var resultRDD: RDD[Row] = {
+    var resultRDD: RDD[Row] = {
       val tmp = hRdd.map{ r =>
         Row.fromSeq(requiredColumns.map(c =>
           DefaultSourceStaticUtils.getValue(catalog.getField(c), r)))
