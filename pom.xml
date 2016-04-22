@@ -4,9 +4,10 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>hbase-spark-test</groupId>
-    <artifactId>com.intel.ssg.bdt</artifactId>
+    <groupId>com.intel.ssg.bdt</groupId>
+    <artifactId>hbase-spark-datasource</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <properties>
         <spark.version>1.6.0</spark.version>

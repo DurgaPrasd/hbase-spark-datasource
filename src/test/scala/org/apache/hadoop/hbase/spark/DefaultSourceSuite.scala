@@ -187,7 +187,7 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
   test("df operation") {
     assert(df.select("KEY_FIELD").count() == 5)
   }
-/*
+
   test("scan") {
     val results = sqlContext.sql("SELECT KEY_FIELD FROM hbaseTable1 " +
         "WHERE " +
@@ -736,7 +736,8 @@ BeforeAndAfterEach with BeforeAndAfterAll with Logging {
     assert(results.length == 2)
 
     assert(executionRules.dynamicLogicExpression == null)
-  }*/
+  }
+  
   def writeCatalog = s"""{
                         |"table":{"namespace":"default", "name":"t1"},
                         |"rowkey":"key",

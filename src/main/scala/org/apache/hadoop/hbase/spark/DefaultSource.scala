@@ -92,12 +92,10 @@ case class HBaseRelation (
 
   //create or get latest HBaseContext
   @transient val config = HBaseConfiguration.create()
-   println(config.toString())
- config.reloadConfiguration()
-//configResources.split(",").foreach( r => {println(r + "/hbase-site.xml"); config.addResource(r + "/hbase-site.xml")})
- //   configResources.split(",").foreach( r => config.addResource(r))
-   println(config.toString())
-    val hbaseContext:HBaseContext = new HBaseContext(sqlContext.sparkContext, config)
+  config.reloadConfiguration()
+  configResources.split(",").filter(_.length > 0).foreach(r => config.addResource(r))
+  
+  val hbaseContext:HBaseContext = new HBaseContext(sqlContext.sparkContext, config)
 
   val wrappedConf = new SerializableConfiguration(hbaseContext.config)
   def hbaseConf = wrappedConf.value
@@ -260,42 +258,6 @@ case class HBaseRelation (
       None
     }
 
-    /*val hRdd = new HBaseTableScanRDD(this, hbaseContext, pushDownFilterJava, requiredQualifierDefinitionList.seq)
-    pushDownRowKeyFilter.points.foreach(hRdd.addPoint(_))
-    pushDownRowKeyFilter.ranges.foreach(hRdd.addRange(_))
-println("-----------getting hrdd-------------")
-hRdd.foreach(x=>println(x.getRow))
-println(hRdd.points.size)
-    println(hRdd.ranges.size)
-println("-----------finish getting hrdd-------------")
-    var resultRDD: RDD[Row] = {
-      val tmp = hRdd.map{ r =>
-        Row.fromSeq(requiredColumns.map(c =>
-          DefaultSourceStaticUtils.getValue(catalog.getField(c), r)))
-      }
-      if (tmp.partitions.size > 0) {
-        tmp
-      } else {
-        null
-      }
-    }
-
-
-    if (resultRDD == null) {
-      val scan = new Scan()
-      scan.setCacheBlocks(blockCacheEnable)
-      scan.setBatch(batchNum)
-      scan.setCaching(cacheSize)
-      requiredQualifierDefinitionList.foreach( d =>
-        scan.addColumn(d.cfBytes, d.colBytes))
-
-      val rdd = hbaseContext.hbaseRDD(TableName.valueOf(tableName), scan).map(r => {
-        Row.fromSeq(requiredColumns.map(c => DefaultSourceStaticUtils.getValue(catalog.getField(c), r._2)))
-      })
-      resultRDD=rdd
-    }
-    resultRDD*/
-
     val scan = new Scan()
     scan.setCacheBlocks(blockCacheEnable)
     scan.setBatch(batchNum)
@@ -304,9 +266,7 @@ println("-----------finish getting hrdd-------------")
       scan.addColumn(d.cfBytes, d.colBytes))
 
     val rdd = hbaseContext.hbaseRDD(TableName.valueOf(tableName), scan).map(r => {
-      //Row.fromSeq(requiredColumns.map(c => DefaultSourceStaticUtils.getValue(catalog.getField(c), r._2)))
        val indexedFields = getIndexedProjections(requiredColumns).map(_._1)
-      indexedFields.map(x => println(x.colName))
       buildRow(indexedFields, r._2)
     })
     rdd
@@ -377,9 +337,6 @@ println("-----------finish getting hrdd-------------")
             new AndLogicExpression(superDynamicLogicExpression, logicExpression)
         superRowKeyFilter.mergeIntersect(rowKeyFilter)
       }
-      println("===============here key rot=================")
-      println(superRowKeyFilter)
-
     })
 
     val queryValueArray = queryValueList.toArray
